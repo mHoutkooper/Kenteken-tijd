@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Kenteken Tijd</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{
+
+  margin:0;
+
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+
+  background:#f2f2f7;
+
+  color:#111;
+
+}
+
+header{
+
+  background:#111;
+
+  color:white;
+
+  padding:28px 20px 22px;
+
+  text-align:center;
+
+}
+
+h1{margin:0;font-size:28px}
+
+.container{padding:20px;max-width:600px;margin:auto}
+
+.card{
+
+  background:white;
+
+  border-radius:18px;
+
+  padding:20px;
+
+  margin-bottom:18px;
+
+  box-shadow:0 2px 8px #00000012;
+
+}
+
+label{font-weight:600;display:block;margin-bottom:8px}
+
+input{
+
+  width:100%;
+
+  padding:15px;
+
+  font-size:20px;
+
+  border:1px solid #ccc;
+
+  border-radius:12px;
+
+  margin-bottom:15px;
+
+  text-transform:uppercase;
+
+}
+
+button{
+
+  width:100%;
+
+  border:0;
+
+  border-radius:14px;
+
+  padding:16px;
+
+  font-size:18px;
+
+  font-weight:700;
+
+  margin-top:8px;
+
+}
+
+.start{background:#16883e;color:white}
+
+.stop{background:#d93025;color:white}
+
+.secondary{background:#e5e5ea;color:#111}
+
+.timer{
+
+  text-align:center;
+
+  font-size:42px;
+
+  font-weight:700;
+
+  margin:15px 0;
+
+}
+
+.status{text-align:center;font-weight:600;margin-bottom:10px}
+
+.history-item{
+
+  border-top:1px solid #ddd;
+
+  padding:14px 0;
+
+}
+
+.history-item:first-child{border-top:0}
+
+.small{color:#666;font-size:14px}
+
+.empty{text-align:center;color:#777}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+  <h1>🚗 Kenteken Tijd</h1>
+
+</header>
+
+<div class="container">
+
+<div class="card">
+
+  <label>Kenteken</label>
+
+  <input id="plate" placeholder="Bijv. 12-ABC-3" maxlength="10">
+
+  <div class="status" id="status">Klaar om te starten</div>
+
+  <div class="timer" id="timer">00:00:00</div>
+
+  <button class="start" id="startBtn" onclick="startTimer()">
+
+    ▶ Start werkzaamheden
+
+  </button>
+
+  <button class="stop" id="stopBtn" onclick="stopTimer()" style="display:none">
+
+    ■ Stop werkzaamheden
+
+  </button>
+
+</div>
+
+<div class="card">
+
+  <h2>Vandaag</h2>
+
+  <div id="today"></div>
+
+</div>
+
+<div class="card">
+
+  <h2>Historie</h2>
+
+  <div id="history"></div>
+
+  <button class="secondary" onclick="clearHistory()">Historie wissen</button>
+
+</div>
+
+</div>
+
+<script>
+
+let startTime=null;
+
+let timerInterval=null;
+
+let active=false;
+
+const plate=document.getElementById("plate");
+
+const timer=document.getElementById("timer");
+
+const status=document.getElementById("status");
+
+const startBtn=document.getElementById("startBtn");
+
+const stopBtn=document.getElementById("stopBtn");
+
+function formatTime(seconds){
+
+  let h=Math.floor(seconds/3600);
+
+  let m=Math.floor((seconds%3600)/60);
+
+  let s=seconds%60;
+
+  return [h,m,s].map(x=>String(x).padStart(2,"0")).join(":");
+
+}
+
+function updateTimer(){
+
+  if(!startTime)return;
+
+  const seconds=Math.floor((Date.now()-startTime)/1000);
+
+  timer.textContent=formatTime(seconds);
+
+}
+
+function startTimer(){
+
+  if(!plate.value.trim()){
+
+    alert("Vul eerst een kenteken in.");
+
+    plate.focus();
+
+    return;
+
+  }
+
+  startTime=Date.now();
+
+  active=true;
+
+  plate.disabled=true;
+
+  startBtn.style.display="none";
+
+  stopBtn.style.display="block";
+
+  status.textContent="Werkzaamheden lopen";
+
+  timerInterval=setInterval(updateTimer,1000);
+
+}
+
+function stopTimer(){
+
+  if(!active)return;
+
+  clearInterval(timerInterval);
+
+  const endTime=Date.now();
+
+  const seconds=Math.floor((endTime-startTime)/1000);
+
+  const kenteken=plate.value.trim().toUpperCase();
+
+  const record={
+
+    kenteken:kenteken,
+
+    start:new Date(startTime).toLocaleString("nl-NL"),
+
+    eind:new Date(endTime).toLocaleString("nl-NL"),
+
+    seconden:seconds
+
+  };
+
+  let history=JSON.parse(localStorage.getItem("kentekenTijd")||"[]");
+
+  history.unshift(record);
+
+  localStorage.setItem("kentekenTijd",JSON.stringify(history));
+
+  active=false;
+
+  startTime=null;
+
+  timerInterval=null;
+
+  plate.disabled=false;
+
+  plate.value="";
+
+  timer.textContent="00:00:00";
+
+  status.textContent="Klaar om opnieuw te starten";
+
+  startBtn.style.display="block";
+
+  stopBtn.style.display="none";
+
+  showHistory();
+
+}
+
+function showHistory(){
+
+  const history=JSON.parse(localStorage.getItem("kentekenTijd")||"[]");
+
+  const today=document.getElementById("today");
+
+  const historyDiv=document.getElementById("history");
+
+  if(history.length===0){
+
+    today.innerHTML='<div class="empty">Nog geen geregistreerde tijden.</div>';
+
+    historyDiv.innerHTML='<div class="empty">Nog geen historie.</div>';
+
+    return;
+
+  }
+
+  const vandaag=new Date().toLocaleDateString("nl-NL");
+
+  const todayRecords=history.filter(x=>x.start.startsWith(vandaag));
+
+  today.innerHTML=todayRecords.length
+
+    ? todayRecords.map(item=>`
+
+      <div class="history-item">
+
+        <strong>${item.kenteken}</strong><br>
+
+        ${formatTime(item.seconden)}
+
+        <div class="small">${item.start}</div>
+
+      </div>`).join("")
+
+    : '<div class="empty">Vandaag nog geen tijden.</div>';
+
+  historyDiv.innerHTML=history.map(item=>`
+
+    <div class="history-item">
+
+      <strong>${item.kenteken}</strong><br>
+
+      <b>${formatTime(item.seconden)}</b>
+
+      <div class="small">
+
+        ${item.start}<br>
+
+        gestopt: ${item.eind}
+
+      </div>
+
+    </div>
+
+  `).join("");
+
+}
+
+function clearHistory(){
+
+  if(confirm("Alle geregistreerde tijden wissen?")){
+
+    localStorage.removeItem("kentekenTijd");
+
+    showHistory();
+
+  }
+
+}
+
+showHistory();
+
+</script>
+
+</body>
+
+</html>
