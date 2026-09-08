@@ -38,9 +38,23 @@ header{
 
 }
 
-h1{margin:0;font-size:28px}
+h1{
 
-.container{padding:20px;max-width:600px;margin:auto}
+  margin:0;
+
+  font-size:28px;
+
+}
+
+.container{
+
+  padding:20px;
+
+  max-width:600px;
+
+  margin:auto;
+
+}
 
 .card{
 
@@ -56,7 +70,15 @@ h1{margin:0;font-size:28px}
 
 }
 
-label{font-weight:600;display:block;margin-bottom:8px}
+label{
+
+  font-weight:600;
+
+  display:block;
+
+  margin-bottom:8px;
+
+}
 
 input{
 
@@ -94,11 +116,37 @@ button{
 
 }
 
-.start{background:#16883e;color:white}
+.start{
 
-.stop{background:#d93025;color:white}
+  background:#16883e;
 
-.secondary{background:#e5e5ea;color:#111}
+  color:white;
+
+}
+
+.pause{
+
+  background:#f0a000;
+
+  color:white;
+
+}
+
+.stop{
+
+  background:#d93025;
+
+  color:white;
+
+}
+
+.secondary{
+
+  background:#e5e5ea;
+
+  color:#111;
+
+}
 
 .timer{
 
@@ -112,7 +160,15 @@ button{
 
 }
 
-.status{text-align:center;font-weight:600;margin-bottom:10px}
+.status{
+
+  text-align:center;
+
+  font-weight:600;
+
+  margin-bottom:10px;
+
+}
 
 .history-item{
 
@@ -122,11 +178,27 @@ button{
 
 }
 
-.history-item:first-child{border-top:0}
+.history-item:first-child{
 
-.small{color:#666;font-size:14px}
+  border-top:0;
 
-.empty{text-align:center;color:#777}
+}
+
+.small{
+
+  color:#666;
+
+  font-size:14px;
+
+}
+
+.empty{
+
+  text-align:center;
+
+  color:#777;
+
+}
 
 </style>
 
@@ -146,19 +218,77 @@ button{
 
   <label>Kenteken</label>
 
-  <input id="plate" placeholder="Bijv. 12-ABC-3" maxlength="10">
+  <input
 
-  <div class="status" id="status">Klaar om te starten</div>
+    id="plate"
 
-  <div class="timer" id="timer">00:00:00</div>
+    placeholder="Bijv. 12-ABC-3"
 
-  <button class="start" id="startBtn" onclick="startTimer()">
+    maxlength="10"
+
+  >
+
+  <div class="status" id="status">
+
+    Klaar om te starten
+
+  </div>
+
+  <div class="timer" id="timer">
+
+    00:00:00
+
+  </div>
+
+  <button
+
+    class="start"
+
+    id="startBtn"
+
+    onclick="startTimer()">
 
     ▶ Start werkzaamheden
 
   </button>
 
-  <button class="stop" id="stopBtn" onclick="stopTimer()" style="display:none">
+  <button
+
+    class="pause"
+
+    id="pauseBtn"
+
+    onclick="pauseTimer()"
+
+    style="display:none">
+
+    ⏸ Pauzeren
+
+  </button>
+
+  <button
+
+    class="start"
+
+    id="resumeBtn"
+
+    onclick="resumeTimer()"
+
+    style="display:none">
+
+    ▶ Hervatten
+
+  </button>
+
+  <button
+
+    class="stop"
+
+    id="stopBtn"
+
+    onclick="stopTimer()"
+
+    style="display:none">
 
     ■ Stop werkzaamheden
 
@@ -180,7 +310,15 @@ button{
 
   <div id="history"></div>
 
-  <button class="secondary" onclick="clearHistory()">Historie wissen</button>
+  <button
+
+    class="secondary"
+
+    onclick="clearHistory()">
+
+    Historie wissen
+
+  </button>
 
 </div>
 
@@ -188,41 +326,79 @@ button{
 
 <script>
 
-let startTime=null;
+let startTime = null;
 
-let timerInterval=null;
+let pauseStart = null;
 
-let active=false;
+let totalPaused = 0;
 
-const plate=document.getElementById("plate");
+let timerInterval = null;
 
-const timer=document.getElementById("timer");
+let active = false;
 
-const status=document.getElementById("status");
+let paused = false;
 
-const startBtn=document.getElementById("startBtn");
+const plate = document.getElementById("plate");
 
-const stopBtn=document.getElementById("stopBtn");
+const timer = document.getElementById("timer");
+
+const status = document.getElementById("status");
+
+const startBtn = document.getElementById("startBtn");
+
+const pauseBtn = document.getElementById("pauseBtn");
+
+const resumeBtn = document.getElementById("resumeBtn");
+
+const stopBtn = document.getElementById("stopBtn");
 
 function formatTime(seconds){
 
-  let h=Math.floor(seconds/3600);
+  let h = Math.floor(seconds / 3600);
 
-  let m=Math.floor((seconds%3600)/60);
+  let m = Math.floor((seconds % 3600) / 60);
 
-  let s=seconds%60;
+  let s = seconds % 60;
 
-  return [h,m,s].map(x=>String(x).padStart(2,"0")).join(":");
+  return [h,m,s]
+
+    .map(x => String(x).padStart(2,"0"))
+
+    .join(":");
+
+}
+
+function getWorkedSeconds(){
+
+  if(!startTime){
+
+    return 0;
+
+  }
+
+  let endTime = Date.now();
+
+  let pausedTime = totalPaused;
+
+  if(paused && pauseStart){
+
+    pausedTime += Math.floor((endTime - pauseStart) / 1000);
+
+  }
+
+  return Math.max(
+
+    0,
+
+    Math.floor((endTime - startTime) / 1000) - pausedTime
+
+  );
 
 }
 
 function updateTimer(){
 
-  if(!startTime)return;
-
-  const seconds=Math.floor((Date.now()-startTime)/1000);
-
-  timer.textContent=formatTime(seconds);
+  timer.textContent = formatTime(getWorkedSeconds());
 
 }
 
@@ -238,35 +414,125 @@ function startTimer(){
 
   }
 
-  startTime=Date.now();
+  startTime = Date.now();
 
-  active=true;
+  pauseStart = null;
 
-  plate.disabled=true;
+  totalPaused = 0;
 
-  startBtn.style.display="none";
+  active = true;
 
-  stopBtn.style.display="block";
+  paused = false;
 
-  status.textContent="Werkzaamheden lopen";
+  plate.disabled = true;
 
-  timerInterval=setInterval(updateTimer,1000);
+  startBtn.style.display = "none";
+
+  pauseBtn.style.display = "block";
+
+  resumeBtn.style.display = "none";
+
+  stopBtn.style.display = "block";
+
+  status.textContent = "Werkzaamheden lopen";
+
+  timer.textContent = "00:00:00";
+
+  clearInterval(timerInterval);
+
+  timerInterval = setInterval(updateTimer,1000);
+
+}
+
+function pauseTimer(){
+
+  if(!active || paused){
+
+    return;
+
+  }
+
+  pauseStart = Date.now();
+
+  paused = true;
+
+  status.textContent = "Werkzaamheden gepauzeerd";
+
+  pauseBtn.style.display = "none";
+
+  resumeBtn.style.display = "block";
+
+  updateTimer();
+
+}
+
+function resumeTimer(){
+
+  if(!active || !paused){
+
+    return;
+
+  }
+
+  const now = Date.now();
+
+  totalPaused += Math.floor(
+
+    (now - pauseStart) / 1000
+
+  );
+
+  pauseStart = null;
+
+  paused = false;
+
+  status.textContent = "Werkzaamheden lopen";
+
+  pauseBtn.style.display = "block";
+
+  resumeBtn.style.display = "none";
+
+  updateTimer();
 
 }
 
 function stopTimer(){
 
-  if(!active)return;
+  if(!active){
+
+    return;
+
+  }
 
   clearInterval(timerInterval);
 
-  const endTime=Date.now();
+  const endTime = Date.now();
 
-  const seconds=Math.floor((endTime-startTime)/1000);
+  let pausedTime = totalPaused;
 
-  const kenteken=plate.value.trim().toUpperCase();
+  if(paused && pauseStart){
 
-  const record={
+    pausedTime += Math.floor(
+
+      (endTime - pauseStart) / 1000
+
+    );
+
+  }
+
+  const seconds = Math.max(
+
+    0,
+
+    Math.floor((endTime - startTime) / 1000) - pausedTime
+
+  );
+
+  const kenteken =
+
+    plate.value.trim().toUpperCase();
+
+  const record = {
 
     kenteken:kenteken,
 
@@ -278,29 +544,53 @@ function stopTimer(){
 
   };
 
-  let history=JSON.parse(localStorage.getItem("kentekenTijd")||"[]");
+  let history =
+
+    JSON.parse(
+
+      localStorage.getItem("kentekenTijd") || "[]"
+
+    );
 
   history.unshift(record);
 
-  localStorage.setItem("kentekenTijd",JSON.stringify(history));
+  localStorage.setItem(
 
-  active=false;
+    "kentekenTijd",
 
-  startTime=null;
+    JSON.stringify(history)
 
-  timerInterval=null;
+  );
 
-  plate.disabled=false;
+  active = false;
 
-  plate.value="";
+  paused = false;
 
-  timer.textContent="00:00:00";
+  startTime = null;
 
-  status.textContent="Klaar om opnieuw te starten";
+  pauseStart = null;
 
-  startBtn.style.display="block";
+  totalPaused = 0;
 
-  stopBtn.style.display="none";
+  timerInterval = null;
+
+  plate.disabled = false;
+
+  plate.value = "";
+
+  timer.textContent = "00:00:00";
+
+  status.textContent =
+
+    "Klaar om opnieuw te starten";
+
+  startBtn.style.display = "block";
+
+  pauseBtn.style.display = "none";
+
+  resumeBtn.style.display = "none";
+
+  stopBtn.style.display = "none";
 
   showHistory();
 
@@ -308,61 +598,93 @@ function stopTimer(){
 
 function showHistory(){
 
-  const history=JSON.parse(localStorage.getItem("kentekenTijd")||"[]");
+  const history =
 
-  const today=document.getElementById("today");
+    JSON.parse(
 
-  const historyDiv=document.getElementById("history");
+      localStorage.getItem("kentekenTijd") || "[]"
 
-  if(history.length===0){
+    );
 
-    today.innerHTML='<div class="empty">Nog geen geregistreerde tijden.</div>';
+  const today =
 
-    historyDiv.innerHTML='<div class="empty">Nog geen historie.</div>';
+    document.getElementById("today");
+
+  const historyDiv =
+
+    document.getElementById("history");
+
+  if(history.length === 0){
+
+    today.innerHTML =
+
+      '<div class="empty">Nog geen geregistreerde tijden.</div>';
+
+    historyDiv.innerHTML =
+
+      '<div class="empty">Nog geen historie.</div>';
 
     return;
 
   }
 
-  const vandaag=new Date().toLocaleDateString("nl-NL");
+  const vandaag =
 
-  const todayRecords=history.filter(x=>x.start.startsWith(vandaag));
+    new Date().toLocaleDateString("nl-NL");
 
-  today.innerHTML=todayRecords.length
+  const todayRecords =
 
-    ? todayRecords.map(item=>`
+    history.filter(
+
+      x => x.start.startsWith(vandaag)
+
+    );
+
+  today.innerHTML =
+
+    todayRecords.length
+
+      ? todayRecords.map(item => `
+
+        <div class="history-item">
+
+          <strong>${item.kenteken}</strong><br>
+
+          ${formatTime(item.seconden)}
+
+          <div class="small">
+
+            ${item.start}
+
+          </div>
+
+        </div>
+
+      `).join("")
+
+      : '<div class="empty">Vandaag nog geen tijden.</div>';
+
+  historyDiv.innerHTML =
+
+    history.map(item => `
 
       <div class="history-item">
 
         <strong>${item.kenteken}</strong><br>
 
-        ${formatTime(item.seconden)}
+        <b>${formatTime(item.seconden)}</b>
 
-        <div class="small">${item.start}</div>
+        <div class="small">
 
-      </div>`).join("")
+          ${item.start}<br>
 
-    : '<div class="empty">Vandaag nog geen tijden.</div>';
+          gestopt: ${item.eind}
 
-  historyDiv.innerHTML=history.map(item=>`
-
-    <div class="history-item">
-
-      <strong>${item.kenteken}</strong><br>
-
-      <b>${formatTime(item.seconden)}</b>
-
-      <div class="small">
-
-        ${item.start}<br>
-
-        gestopt: ${item.eind}
+        </div>
 
       </div>
 
-    </div>
-
-  `).join("");
+    `).join("");
 
 }
 
@@ -385,3 +707,5 @@ showHistory();
 </body>
 
 </html>
+
+  
