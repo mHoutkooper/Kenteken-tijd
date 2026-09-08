@@ -6,7 +6,7 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>Kenteken Tijd</title>
 
@@ -92,7 +92,7 @@ input{
 
   border-radius:12px;
 
-  margin-bottom:15px;
+  margin-bottom:12px;
 
   text-transform:uppercase;
 
@@ -106,7 +106,7 @@ button{
 
   border-radius:14px;
 
-  padding:16px;
+  padding:15px;
 
   font-size:18px;
 
@@ -140,6 +140,14 @@ button{
 
 }
 
+.resume{
+
+  background:#16883e;
+
+  color:white;
+
+}
+
 .secondary{
 
   background:#e5e5ea;
@@ -152,11 +160,11 @@ button{
 
   text-align:center;
 
-  font-size:42px;
+  font-size:38px;
 
   font-weight:700;
 
-  margin:15px 0;
+  margin:12px 0;
 
 }
 
@@ -166,7 +174,37 @@ button{
 
   font-weight:600;
 
-  margin-bottom:10px;
+  margin-bottom:8px;
+
+}
+
+.active-title{
+
+  font-size:21px;
+
+  font-weight:700;
+
+}
+
+.job{
+
+  border-top:1px solid #ddd;
+
+  padding:16px 0;
+
+}
+
+.job:first-child{
+
+  border-top:0;
+
+}
+
+.small{
+
+  color:#666;
+
+  font-size:14px;
 
 }
 
@@ -184,19 +222,37 @@ button{
 
 }
 
-.small{
-
-  color:#666;
-
-  font-size:14px;
-
-}
-
 .empty{
 
   text-align:center;
 
   color:#777;
+
+  padding:10px;
+
+}
+
+.job-buttons{
+
+  display:flex;
+
+  gap:8px;
+
+}
+
+.job-buttons button{
+
+  flex:1;
+
+}
+
+@media(max-width:420px){
+
+  .job-buttons{
+
+    flex-direction:column;
+
+  }
 
 }
 
@@ -214,149 +270,119 @@ button{
 
 <div class="container">
 
-<div class="card">
+  <div class="card">
 
-  <label>Kenteken</label>
+    <label>Nieuw kenteken</label>
 
-  <input
+    <input
 
-    id="plate"
+      id="plate"
 
-    placeholder="Bijv. 12-ABC-3"
+      placeholder="Bijv. 12-ABC-3"
 
-    maxlength="10"
+      maxlength="10"
 
-  >
+      autocomplete="off"
 
-  <div class="status" id="status">
+    >
 
-    Klaar om te starten
+    <button
+
+      class="start"
+
+      onclick="startJob()">
+
+      ▶ Start werkzaamheden
+
+    </button>
 
   </div>
 
-  <div class="timer" id="timer">
+  <div class="card">
 
-    00:00:00
+    <h2>Actieve werkzaamheden</h2>
+
+    <div id="activeJobs">
+
+      <div class="empty">
+
+        Geen actieve werkzaamheden.
+
+      </div>
+
+    </div>
 
   </div>
 
-  <button
+  <div class="card">
 
-    class="start"
+    <h2>Vandaag</h2>
 
-    id="startBtn"
+    <div id="today">
 
-    onclick="startTimer()">
+      <div class="empty">
 
-    ▶ Start werkzaamheden
+        Nog geen geregistreerde tijden.
 
-  </button>
+      </div>
 
-  <button
+    </div>
 
-    class="pause"
+  </div>
 
-    id="pauseBtn"
+  <div class="card">
 
-    onclick="pauseTimer()"
+    <h2>Historie</h2>
 
-    style="display:none">
+    <div id="history">
 
-    ⏸ Pauzeren
+      <div class="empty">
 
-  </button>
+        Nog geen historie.
 
-  <button
+      </div>
 
-    class="start"
+    </div>
 
-    id="resumeBtn"
+    <button
 
-    onclick="resumeTimer()"
+      class="secondary"
 
-    style="display:none">
+      onclick="clearHistory()">
 
-    ▶ Hervatten
+      Historie wissen
 
-  </button>
+    </button>
 
-  <button
-
-    class="stop"
-
-    id="stopBtn"
-
-    onclick="stopTimer()"
-
-    style="display:none">
-
-    ■ Stop werkzaamheden
-
-  </button>
-
-</div>
-
-<div class="card">
-
-  <h2>Vandaag</h2>
-
-  <div id="today"></div>
-
-</div>
-
-<div class="card">
-
-  <h2>Historie</h2>
-
-  <div id="history"></div>
-
-  <button
-
-    class="secondary"
-
-    onclick="clearHistory()">
-
-    Historie wissen
-
-  </button>
-
-</div>
+  </div>
 
 </div>
 
 <script>
 
-let startTime = null;
+const ACTIVE_KEY = "kentekenActief";
 
-let pauseStart = null;
+const HISTORY_KEY = "kentekenTijd";
 
-let totalPaused = 0;
+let jobs =
 
-let timerInterval = null;
+  JSON.parse(
 
-let active = false;
+    localStorage.getItem(ACTIVE_KEY) || "[]"
 
-let paused = false;
-
-const plate = document.getElementById("plate");
-
-const timer = document.getElementById("timer");
-
-const status = document.getElementById("status");
-
-const startBtn = document.getElementById("startBtn");
-
-const pauseBtn = document.getElementById("pauseBtn");
-
-const resumeBtn = document.getElementById("resumeBtn");
-
-const stopBtn = document.getElementById("stopBtn");
+  );
 
 function formatTime(seconds){
 
+  seconds = Math.max(0, Math.floor(seconds));
+
   let h = Math.floor(seconds / 3600);
 
-  let m = Math.floor((seconds % 3600) / 60);
+  let m = Math.floor(
+
+    (seconds % 3600) / 60
+
+  );
 
   let s = seconds % 60;
 
@@ -368,21 +394,51 @@ function formatTime(seconds){
 
 }
 
-function getWorkedSeconds(){
+function escapeHtml(text){
 
-  if(!startTime){
+  return String(text)
 
-    return 0;
+    .replace(/&/g,"&amp;")
 
-  }
+    .replace(/</g,"&lt;")
 
-  let endTime = Date.now();
+    .replace(/>/g,"&gt;")
 
-  let pausedTime = totalPaused;
+    .replace(/"/g,"&quot;")
 
-  if(paused && pauseStart){
+    .replace(/'/g,"&#039;");
 
-    pausedTime += Math.floor((endTime - pauseStart) / 1000);
+}
+
+function saveJobs(){
+
+  localStorage.setItem(
+
+    ACTIVE_KEY,
+
+    JSON.stringify(jobs)
+
+  );
+
+}
+
+function getWorkedSeconds(job){
+
+  const now = Date.now();
+
+  let paused =
+
+    job.totalPaused || 0;
+
+  if(job.paused && job.pauseStart){
+
+    paused +=
+
+      Math.floor(
+
+        (now - job.pauseStart) / 1000
+
+      );
 
   }
 
@@ -390,155 +446,185 @@ function getWorkedSeconds(){
 
     0,
 
-    Math.floor((endTime - startTime) / 1000) - pausedTime
+    Math.floor(
+
+      (now - job.startTime) / 1000
+
+    ) - paused
 
   );
 
 }
 
-function updateTimer(){
+function startJob(){
 
-  timer.textContent = formatTime(getWorkedSeconds());
+  const input =
 
-}
-
-function startTimer(){
-
-  if(!plate.value.trim()){
-
-    alert("Vul eerst een kenteken in.");
-
-    plate.focus();
-
-    return;
-
-  }
-
-  startTime = Date.now();
-
-  pauseStart = null;
-
-  totalPaused = 0;
-
-  active = true;
-
-  paused = false;
-
-  plate.disabled = true;
-
-  startBtn.style.display = "none";
-
-  pauseBtn.style.display = "block";
-
-  resumeBtn.style.display = "none";
-
-  stopBtn.style.display = "block";
-
-  status.textContent = "Werkzaamheden lopen";
-
-  timer.textContent = "00:00:00";
-
-  clearInterval(timerInterval);
-
-  timerInterval = setInterval(updateTimer,1000);
-
-}
-
-function pauseTimer(){
-
-  if(!active || paused){
-
-    return;
-
-  }
-
-  pauseStart = Date.now();
-
-  paused = true;
-
-  status.textContent = "Werkzaamheden gepauzeerd";
-
-  pauseBtn.style.display = "none";
-
-  resumeBtn.style.display = "block";
-
-  updateTimer();
-
-}
-
-function resumeTimer(){
-
-  if(!active || !paused){
-
-    return;
-
-  }
-
-  const now = Date.now();
-
-  totalPaused += Math.floor(
-
-    (now - pauseStart) / 1000
-
-  );
-
-  pauseStart = null;
-
-  paused = false;
-
-  status.textContent = "Werkzaamheden lopen";
-
-  pauseBtn.style.display = "block";
-
-  resumeBtn.style.display = "none";
-
-  updateTimer();
-
-}
-
-function stopTimer(){
-
-  if(!active){
-
-    return;
-
-  }
-
-  clearInterval(timerInterval);
-
-  const endTime = Date.now();
-
-  let pausedTime = totalPaused;
-
-  if(paused && pauseStart){
-
-    pausedTime += Math.floor(
-
-      (endTime - pauseStart) / 1000
-
-    );
-
-  }
-
-  const seconds = Math.max(
-
-    0,
-
-    Math.floor((endTime - startTime) / 1000) - pausedTime
-
-  );
+    document.getElementById("plate");
 
   const kenteken =
 
-    plate.value.trim().toUpperCase();
+    input.value.trim().toUpperCase();
 
-  const record = {
+  if(!kenteken){
+
+    alert(
+
+      "Vul eerst een kenteken in."
+
+    );
+
+    input.focus();
+
+    return;
+
+  }
+
+  const alreadyActive =
+
+    jobs.some(
+
+      job => job.kenteken === kenteken
+
+    );
+
+  if(alreadyActive){
+
+    alert(
+
+      "Dit kenteken is al actief."
+
+    );
+
+    return;
+
+  }
+
+  jobs.push({
+
+    id:
+
+      Date.now().toString() +
+
+      Math.random().toString(36).slice(2),
 
     kenteken:kenteken,
 
-    start:new Date(startTime).toLocaleString("nl-NL"),
+    startTime:Date.now(),
 
-    eind:new Date(endTime).toLocaleString("nl-NL"),
+    totalPaused:0,
+
+    pauseStart:null,
+
+    paused:false
+
+  });
+
+  saveJobs();
+
+  input.value="";
+
+  render();
+
+}
+
+function pauseJob(id){
+
+  const job =
+
+    jobs.find(
+
+      j => j.id === id
+
+    );
+
+  if(!job || job.paused)
+
+    return;
+
+  job.paused=true;
+
+  job.pauseStart=Date.now();
+
+  saveJobs();
+
+  render();
+
+}
+
+function resumeJob(id){
+
+  const job =
+
+    jobs.find(
+
+      j => j.id === id
+
+    );
+
+  if(!job || !job.paused)
+
+    return;
+
+  job.totalPaused +=
+
+    Math.floor(
+
+      (Date.now() - job.pauseStart) / 1000
+
+    );
+
+  job.pauseStart=null;
+
+  job.paused=false;
+
+  saveJobs();
+
+  render();
+
+}
+
+function stopJob(id){
+
+  const index =
+
+    jobs.findIndex(
+
+      j => j.id === id
+
+    );
+
+  if(index === -1)
+
+    return;
+
+  const job=jobs[index];
+
+  let seconds =
+
+    getWorkedSeconds(job);
+
+  const endTime=Date.now();
+
+  const record={
+
+    kenteken:job.kenteken,
+
+    start:
+
+      new Date(
+
+        job.startTime
+
+      ).toLocaleString("nl-NL"),
+
+    eind:
+
+      new Date(
+
+        endTime
+
+      ).toLocaleString("nl-NL"),
 
     seconden:seconds
 
@@ -548,7 +634,11 @@ function stopTimer(){
 
     JSON.parse(
 
-      localStorage.getItem("kentekenTijd") || "[]"
+      localStorage.getItem(
+
+        HISTORY_KEY
+
+      ) || "[]"
 
     );
 
@@ -556,43 +646,131 @@ function stopTimer(){
 
   localStorage.setItem(
 
-    "kentekenTijd",
+    HISTORY_KEY,
 
     JSON.stringify(history)
 
   );
 
-  active = false;
+  jobs.splice(index,1);
 
-  paused = false;
+  saveJobs();
 
-  startTime = null;
+  render();
 
-  pauseStart = null;
+}
 
-  totalPaused = 0;
+function renderActiveJobs(){
 
-  timerInterval = null;
+  const container =
 
-  plate.disabled = false;
+    document.getElementById(
 
-  plate.value = "";
+      "activeJobs"
 
-  timer.textContent = "00:00:00";
+    );
 
-  status.textContent =
+  if(!jobs.length){
 
-    "Klaar om opnieuw te starten";
+    container.innerHTML =
 
-  startBtn.style.display = "block";
+      '<div class="empty">' +
 
-  pauseBtn.style.display = "none";
+      'Geen actieve werkzaamheden.' +
 
-  resumeBtn.style.display = "none";
+      '</div>';
 
-  stopBtn.style.display = "none";
+    return;
 
-  showHistory();
+  }
+
+  container.innerHTML =
+
+    jobs.map(job => {
+
+      const seconds =
+
+        getWorkedSeconds(job);
+
+      const status =
+
+        job.paused
+
+          ? "Werkzaamheden gepauzeerd"
+
+          : "Werkzaamheden lopen";
+
+      const button =
+
+        job.paused
+
+          ?
+
+          `<button
+
+             class="resume"
+
+             onclick="resumeJob('${job.id}')">
+
+             ▶ Hervatten
+
+           </button>`
+
+          :
+
+          `<button
+
+             class="pause"
+
+             onclick="pauseJob('${job.id}')">
+
+             ⏸ Pauzeren
+
+           </button>`;
+
+      return `
+
+        <div class="job">
+
+          <div class="active-title">
+
+            ${escapeHtml(job.kenteken)}
+
+          </div>
+
+          <div class="status">
+
+            ${status}
+
+          </div>
+
+          <div class="timer">
+
+            ${formatTime(seconds)}
+
+          </div>
+
+          <div class="job-buttons">
+
+            ${button}
+
+            <button
+
+              class="stop"
+
+              onclick="stopJob('${job.id}')">
+
+              ■ Stop
+
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
 
 }
 
@@ -602,27 +780,47 @@ function showHistory(){
 
     JSON.parse(
 
-      localStorage.getItem("kentekenTijd") || "[]"
+      localStorage.getItem(
+
+        HISTORY_KEY
+
+      ) || "[]"
 
     );
 
   const today =
 
-    document.getElementById("today");
+    document.getElementById(
+
+      "today"
+
+    );
 
   const historyDiv =
 
-    document.getElementById("history");
+    document.getElementById(
 
-  if(history.length === 0){
+      "history"
+
+    );
+
+  if(!history.length){
 
     today.innerHTML =
 
-      '<div class="empty">Nog geen geregistreerde tijden.</div>';
+      '<div class="empty">' +
+
+      'Nog geen geregistreerde tijden.' +
+
+      '</div>';
 
     historyDiv.innerHTML =
 
-      '<div class="empty">Nog geen historie.</div>';
+      '<div class="empty">' +
+
+      'Nog geen historie.' +
+
+      '</div>';
 
     return;
 
@@ -630,13 +828,25 @@ function showHistory(){
 
   const vandaag =
 
-    new Date().toLocaleDateString("nl-NL");
+    new Date()
+
+      .toLocaleDateString(
+
+        "nl-NL"
+
+      );
 
   const todayRecords =
 
     history.filter(
 
-      x => x.start.startsWith(vandaag)
+      item =>
+
+        item.start.startsWith(
+
+          vandaag
+
+        )
 
     );
 
@@ -644,55 +854,107 @@ function showHistory(){
 
     todayRecords.length
 
-      ? todayRecords.map(item => `
+      ?
+
+      todayRecords
+
+        .map(item => `
+
+          <div class="history-item">
+
+            <strong>
+
+              ${escapeHtml(item.kenteken)}
+
+            </strong>
+
+            <br>
+
+            <b>
+
+              ${formatTime(item.seconden)}
+
+            </b>
+
+            <div class="small">
+
+              ${escapeHtml(item.start)}
+
+            </div>
+
+          </div>
+
+        `)
+
+        .join("")
+
+      :
+
+      '<div class="empty">' +
+
+      'Vandaag nog geen tijden.' +
+
+      '</div>';
+
+  historyDiv.innerHTML =
+
+    history
+
+      .map(item => `
 
         <div class="history-item">
 
-          <strong>${item.kenteken}</strong><br>
+          <strong>
 
-          ${formatTime(item.seconden)}
+            ${escapeHtml(item.kenteken)}
+
+          </strong>
+
+          <br>
+
+          <b>
+
+            ${formatTime(item.seconden)}
+
+          </b>
 
           <div class="small">
 
-            ${item.start}
+            ${escapeHtml(item.start)}
+
+            <br>
+
+            gestopt:
+
+            ${escapeHtml(item.eind)}
 
           </div>
 
         </div>
 
-      `).join("")
+      `)
 
-      : '<div class="empty">Vandaag nog geen tijden.</div>';
-
-  historyDiv.innerHTML =
-
-    history.map(item => `
-
-      <div class="history-item">
-
-        <strong>${item.kenteken}</strong><br>
-
-        <b>${formatTime(item.seconden)}</b>
-
-        <div class="small">
-
-          ${item.start}<br>
-
-          gestopt: ${item.eind}
-
-        </div>
-
-      </div>
-
-    `).join("");
+      .join("");
 
 }
 
 function clearHistory(){
 
-  if(confirm("Alle geregistreerde tijden wissen?")){
+  if(
 
-    localStorage.removeItem("kentekenTijd");
+    confirm(
+
+      "Alle geregistreerde tijden wissen?"
+
+    )
+
+  ){
+
+    localStorage.removeItem(
+
+      HISTORY_KEY
+
+    );
 
     showHistory();
 
@@ -700,12 +962,26 @@ function clearHistory(){
 
 }
 
-showHistory();
+function render(){
+
+  renderActiveJobs();
+
+  showHistory();
+
+}
+
+setInterval(
+
+  renderActiveJobs,
+
+  1000
+
+);
+
+render();
 
 </script>
 
 </body>
 
 </html>
-
-  
