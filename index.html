@@ -374,21 +374,43 @@ let jobs =
 
 function formatTime(seconds){
 
-  seconds = Math.max(0, Math.floor(seconds));
+  seconds =
 
-  let h = Math.floor(seconds / 3600);
+    Math.max(
 
-  let m = Math.floor(
+      0,
 
-    (seconds % 3600) / 60
+      Math.floor(seconds)
 
-  );
+    );
 
-  let s = seconds % 60;
+  let h =
+
+    Math.floor(
+
+      seconds / 3600
+
+    );
+
+  let m =
+
+    Math.floor(
+
+      (seconds % 3600) / 60
+
+    );
+
+  let s =
+
+    seconds % 60;
 
   return [h,m,s]
 
-    .map(x => String(x).padStart(2,"0"))
+    .map(
+
+      x => String(x).padStart(2,"0")
+
+    )
 
     .join(":");
 
@@ -424,13 +446,21 @@ function saveJobs(){
 
 function getWorkedSeconds(job){
 
-  const now = Date.now();
+  const now =
+
+    Date.now();
 
   let paused =
 
     job.totalPaused || 0;
 
-  if(job.paused && job.pauseStart){
+  if(
+
+    job.paused &&
+
+    job.pauseStart
+
+  ){
 
     paused +=
 
@@ -456,6 +486,12 @@ function getWorkedSeconds(job){
 
 }
 
+/* =========================
+
+   NIEUW KENTEKEN STARTEN
+
+   ========================= */
+
 function startJob(){
 
   const input =
@@ -464,7 +500,11 @@ function startJob(){
 
   const kenteken =
 
-    input.value.trim().toUpperCase();
+    input.value
+
+      .trim()
+
+      .toUpperCase();
 
   if(!kenteken){
 
@@ -484,7 +524,9 @@ function startJob(){
 
     jobs.some(
 
-      job => job.kenteken === kenteken
+      job =>
+
+        job.kenteken === kenteken
 
     );
 
@@ -500,13 +542,39 @@ function startJob(){
 
   }
 
+  /*
+
+    Er mag maar één timer tegelijk lopen.
+
+    Daarom worden alle andere lopende
+
+    werkzaamheden automatisch gepauzeerd.
+
+  */
+
+  jobs.forEach(job => {
+
+    if(!job.paused){
+
+      job.paused = true;
+
+      job.pauseStart = Date.now();
+
+    }
+
+  });
+
   jobs.push({
 
     id:
 
       Date.now().toString() +
 
-      Math.random().toString(36).slice(2),
+      Math.random()
+
+        .toString(36)
+
+        .slice(2),
 
     kenteken:kenteken,
 
@@ -522,11 +590,17 @@ function startJob(){
 
   saveJobs();
 
-  input.value="";
+  input.value = "";
 
   render();
 
 }
+
+/* =========================
+
+   PAUZEREN
+
+   ========================= */
 
 function pauseJob(id){
 
@@ -538,19 +612,35 @@ function pauseJob(id){
 
     );
 
-  if(!job || job.paused)
+  if(
+
+    !job ||
+
+    job.paused
+
+  ){
 
     return;
 
-  job.paused=true;
+  }
 
-  job.pauseStart=Date.now();
+  job.paused = true;
+
+  job.pauseStart =
+
+    Date.now();
 
   saveJobs();
 
   render();
 
 }
+
+/* =========================
+
+   HERVATTEN
+
+   ========================= */
 
 function resumeJob(id){
 
@@ -562,9 +652,55 @@ function resumeJob(id){
 
     );
 
-  if(!job || !job.paused)
+  if(
+
+    !job ||
+
+    !job.paused
+
+  ){
 
     return;
+
+  }
+
+  /*
+
+    Er mag maar één timer tegelijk lopen.
+
+    Daarom wordt ieder ander lopend
+
+    kenteken automatisch gepauzeerd.
+
+  */
+
+  jobs.forEach(other => {
+
+    if(
+
+      other.id !== id &&
+
+      !other.paused
+
+    ){
+
+      other.paused = true;
+
+      other.pauseStart =
+
+        Date.now();
+
+    }
+
+  });
+
+  /*
+
+    De pauzetijd van dit kenteken
+
+    wordt afgesloten.
+
+  */
 
   job.totalPaused +=
 
@@ -574,15 +710,21 @@ function resumeJob(id){
 
     );
 
-  job.pauseStart=null;
+  job.pauseStart = null;
 
-  job.paused=false;
+  job.paused = false;
 
   saveJobs();
 
   render();
 
 }
+
+/* =========================
+
+   STOPPEN
+
+   ========================= */
 
 function stopJob(id){
 
@@ -594,21 +736,29 @@ function stopJob(id){
 
     );
 
-  if(index === -1)
+  if(index === -1){
 
     return;
 
-  const job=jobs[index];
+  }
 
-  let seconds =
+  const job =
+
+    jobs[index];
+
+  const seconds =
 
     getWorkedSeconds(job);
 
-  const endTime=Date.now();
+  const endTime =
 
-  const record={
+    Date.now();
 
-    kenteken:job.kenteken,
+  const record = {
+
+    kenteken:
+
+      job.kenteken,
 
     start:
 
@@ -616,7 +766,11 @@ function stopJob(id){
 
         job.startTime
 
-      ).toLocaleString("nl-NL"),
+      ).toLocaleString(
+
+        "nl-NL"
+
+      ),
 
     eind:
 
@@ -624,9 +778,15 @@ function stopJob(id){
 
         endTime
 
-      ).toLocaleString("nl-NL"),
+      ).toLocaleString(
 
-    seconden:seconds
+        "nl-NL"
+
+      ),
+
+    seconden:
+
+      seconds
 
   };
 
@@ -652,13 +812,25 @@ function stopJob(id){
 
   );
 
-  jobs.splice(index,1);
+  jobs.splice(
+
+    index,
+
+    1
+
+  );
 
   saveJobs();
 
   render();
 
 }
+
+/* =========================
+
+   ACTIEVE WERKZAAMHEDEN
+
+   ========================= */
 
 function renderActiveJobs(){
 
@@ -774,6 +946,12 @@ function renderActiveJobs(){
 
 }
 
+/* =========================
+
+   HISTORIE
+
+   ========================= */
+
 function showHistory(){
 
   const history =
@@ -864,7 +1042,11 @@ function showHistory(){
 
             <strong>
 
-              ${escapeHtml(item.kenteken)}
+              ${escapeHtml(
+
+                item.kenteken
+
+              )}
 
             </strong>
 
@@ -872,13 +1054,21 @@ function showHistory(){
 
             <b>
 
-              ${formatTime(item.seconden)}
+              ${formatTime(
+
+                item.seconden
+
+              )}
 
             </b>
 
             <div class="small">
 
-              ${escapeHtml(item.start)}
+              ${escapeHtml(
+
+                item.start
+
+              )}
 
             </div>
 
@@ -906,7 +1096,11 @@ function showHistory(){
 
           <strong>
 
-            ${escapeHtml(item.kenteken)}
+            ${escapeHtml(
+
+              item.kenteken
+
+            )}
 
           </strong>
 
@@ -914,19 +1108,31 @@ function showHistory(){
 
           <b>
 
-            ${formatTime(item.seconden)}
+            ${formatTime(
+
+              item.seconden
+
+            )}
 
           </b>
 
           <div class="small">
 
-            ${escapeHtml(item.start)}
+            ${escapeHtml(
+
+              item.start
+
+            )}
 
             <br>
 
             gestopt:
 
-            ${escapeHtml(item.eind)}
+            ${escapeHtml(
+
+              item.eind
+
+            )}
 
           </div>
 
@@ -937,6 +1143,12 @@ function showHistory(){
       .join("");
 
 }
+
+/* =========================
+
+   HISTORIE WISSEN
+
+   ========================= */
 
 function clearHistory(){
 
@@ -962,6 +1174,12 @@ function clearHistory(){
 
 }
 
+/* =========================
+
+   RENDER
+
+   ========================= */
+
 function render(){
 
   renderActiveJobs();
@@ -969,6 +1187,12 @@ function render(){
   showHistory();
 
 }
+
+/* =========================
+
+   TIMER UPDATE
+
+   ========================= */
 
 setInterval(
 
